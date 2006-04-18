@@ -35,7 +35,7 @@ use vars qw( $VERSION @ISA );
 use Fcntl;
 use File::Temp qw(:POSIX);
 
-$VERSION = '1.11';
+$VERSION = '1.20';
 
 sub init {
     my $self = shift;
@@ -268,8 +268,8 @@ sub write {
     my $self = shift;
     my $file = shift;
 
-    ## see if a file is present
-    if( $file ) {
+    ## see if a file is present, allow for ''
+    if( defined $file ) {
 	$self->file($file);
     }
 
@@ -303,6 +303,43 @@ sub write {
 	    if( $self->strict ) {
 		carp "Error writing crontab (crontab exited with status " . 
 		  ($? >> 8) . "): " . $self->error;
+	    }
+	    return;
+	}
+    }
+
+    return 1;
+}
+
+sub remove_tab {
+    my $self = shift;
+    my $file = shift;
+
+    ## see if a file is present, allow for ''
+    if( defined $file ) {
+	$self->file($file);
+    }
+
+    if( $self->file ) {
+	unlink $self->file;
+    }
+
+    else {
+	my $output = '';
+	if( my $owner = $self->owner ) {
+	    $output = `crontab -u $owner -r 2>&1`;
+	}
+	else {
+	    $output = `yes | crontab -r 2>&1`;
+	}
+	chomp $output;
+
+	## FIXME: what if no $output, but only '$?' ?
+	if( $output || $? ) {
+	    $self->error($output);
+	    if( $self->strict ) {
+		carp "Error removing crontab (crontab exited with status " .
+		  ($? >> 8) ."): " . $self->error;
 	    }
 	    return;
 	}
@@ -1215,6 +1252,19 @@ Example:
     ## same thing
     $ct->file('/var/mycronbackups/cron1.txt');
     $ct->write;
+
+=head2 remove_tab([file])
+
+Removes a crontab. If B<file> is set, that file will be unlinked. If
+B<file> is not set (or is false), B<remove_tab> will attempt to remove
+the selected user's crontab via F<crontab -u username -r> or F<crontab
+-r> for the current user id.
+
+If B<remove_tab> fails, B<error> will be set.
+
+Example:
+
+  $ct->remove_tab('');  ## unset file() and remove the current user's crontab
 
 =head2 error([string])
 
