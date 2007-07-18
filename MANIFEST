@@ -3,7 +3,7 @@ Crontab.pm
 Makefile.PL
 MANIFEST
 README
-eg/crontab.cgi
+example/crontab.cgi
 t/01_comment.t
 t/02_env.t
 t/03_event.t
