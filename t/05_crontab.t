@@ -1,6 +1,6 @@
 use Test;
 use blib;
-BEGIN { plan tests => 75 };
+BEGIN { plan tests => 77 };
 use Config::Crontab;
 ok(1);
 
@@ -447,6 +447,22 @@ ok( $@ =~ qr(Unknown user)i );
 
 eval { $ct->owner("root\0 2>/dev/null; cat /etc/passwd") };
 ok( $@ =~ qr(Illegal username)i );
+
+##
+## test SuSE-specific nolog option
+##
+$crontabd =~ s/^(13\s+9\s+)/\-$1/m;
+
+open FILE, ">$crontabf"
+  or die "Couldn't open $crontabf: $!\n";
+print FILE $crontabd;
+close FILE;
+
+$ct = new Config::Crontab( -file => $crontabf, -system => 1 );
+my($blk) = $ct->select_blocks( -index => 4 );
+ok( $blk->dump, qq!## fetch ufo\n-13\t9\t*\t*\t1-5\tscott\tenv DISPLAY=tub:0 \$HOME/bin/fetch_image\n! );
+($blk->select(-type => 'event'))[0]->nolog(0);
+ok( $blk->dump, qq!## fetch ufo\n13\t9\t*\t*\t1-5\tscott\tenv DISPLAY=tub:0 \$HOME/bin/fetch_image\n! );
 
 END {
     unlink $crontabf;

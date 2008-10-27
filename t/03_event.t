@@ -1,6 +1,6 @@
 use Test;
 use blib;
-BEGIN { plan tests => 124 };
+BEGIN { plan tests => 128 };
 use Config::Crontab;
 ok(1);
 
@@ -251,3 +251,19 @@ $event->system(0);
 $event->data('1 3 5 * Wed blech winnie');
 ok( $event->dump, '1 3 5 * Wed blech winnie' );
 ok( $event->user, '' );
+undef $event;
+
+## test nolog option (SuSE-specific syntax)
+$event = new Config::Crontab::Event;
+$event->data('5 10 * * * /bin/echo "quietly now"');
+$event->nolog(1);
+ok( $event->dump, '-5 10 * * * /bin/echo "quietly now"' );
+$event->minute(50);
+ok( $event->dump, '-50 10 * * * /bin/echo "quietly now"' );
+$event->nolog(0);
+ok( $event->dump, '50 10 * * * /bin/echo "quietly now"' );
+
+## make it into a system event
+$event->user('joe');
+$event->nolog(1);
+ok( $event->dump, qq!-50\t10\t*\t*\t*\tjoe\t/bin/echo "quietly now"! );

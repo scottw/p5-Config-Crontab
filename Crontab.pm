@@ -26,16 +26,17 @@
 ## (Config::Crontab) is for working with crontab files as a whole.
 package Config::Crontab;
 use strict;
+use warnings;
 use Carp;
+use 5.006_001;
 
-use vars qw( $VERSION @ISA );
-@ISA = qw(Config::Crontab::Base Config::Crontab::Container);
+our @ISA = qw(Config::Crontab::Base Config::Crontab::Container);
 
 ## these two are for the 'write' method
 use Fcntl;
 use File::Temp qw(:POSIX);
 
-$VERSION = '1.21';
+our $VERSION = '1.30';
 
 sub init {
     my $self = shift;
@@ -1296,10 +1297,10 @@ Example:
 
 package Config::Crontab::Block;
 use strict;
+use warnings;
 use Carp;
 
-use vars qw(@ISA);
-@ISA = qw(Config::Crontab::Base Config::Crontab::Container);
+our @ISA = qw(Config::Crontab::Base Config::Crontab::Container);
 
 sub init {
     my $self = shift;
@@ -1480,6 +1481,17 @@ sub active {
     $_->active($active) for $self->select(-type => 'event');
 
     return $active;
+}
+
+sub nolog {
+    my $self = shift;
+    return 1 unless @_;
+
+    my $nolog = shift;
+    local $_;
+    $_->nolog($nolog) for $self->select(-type => 'event');
+
+    return $nolog;
 }
 
 ############################################################
@@ -1803,6 +1815,21 @@ Example:
 
     $block->active(0);  ## deactivate this block
 
+=head2 nolog(boolean)
+
+This is (currently) a SuSE-specific extension. From B<crontab(5)>:
+
+  If the uid of the owner is 0 (root), he can put a "-" as first
+  character of a crontab entry. This will prevent cron from writing a
+  syslog message about this command getting executed.
+
+B<nolog> enables adds or removes this hyphen for a given cron event
+line (regardless of whether the user is I<root> or not).
+
+Example:
+
+    $block->nolog(1);  ## quiet all entries in this block
+
 =head2 flag(string)
 
 Flags a block or an object inside a block with the specified data. The
@@ -1844,10 +1871,10 @@ Example:
 
 package Config::Crontab::Event;
 use strict;
+use warnings;
 use Carp;
 
-use vars qw(@ISA);
-@ISA = qw(Config::Crontab::Base);
+our @ISA = qw(Config::Crontab::Base);
 
 use constant RE_DT        => '(?:\d+|\*)(?:[-,\/]\d+)*';
 use constant RE_DM        => '\w{3}(?:,\w{3})*';
@@ -1855,6 +1882,7 @@ use constant RE_DTELEM    => '(?:\*|' . RE_DT . ')';
 use constant RE_DTMOY     => '(?:\*|' . RE_DT . '|' . RE_DM . ')';
 use constant RE_DTDOW     => RE_DTMOY;
 use constant RE_ACTIVE    => '^\s*(\#*)\s*';
+use constant RE_NOLOG     => '(-?)';  ## SuSE-specific extension
 use constant RE_SPECIAL   => '(\@(?:reboot|midnight|(?:year|annual|month|week|dai|hour)ly))';
 use constant RE_DATETIME  => '(' . RE_DTELEM . ')' .
                           '\s+(' . RE_DTELEM . ')' .
@@ -1863,10 +1891,10 @@ use constant RE_DATETIME  => '(' . RE_DTELEM . ')' .
                           '\s+(' . RE_DTDOW  . ')';
 use constant RE_USER      => '\s+(\S+)';
 use constant RE_COMMAND   => '\s+(.+?)\s*$';
-use constant SPECIAL      => RE_ACTIVE . RE_SPECIAL  . RE_COMMAND;
-use constant DATETIME     => RE_ACTIVE . RE_DATETIME . RE_COMMAND;
-use constant SYS_SPECIAL  => RE_ACTIVE . RE_SPECIAL  . RE_USER . RE_COMMAND;
-use constant SYS_DATETIME => RE_ACTIVE . RE_DATETIME . RE_USER . RE_COMMAND;
+use constant SPECIAL      => RE_ACTIVE . RE_NOLOG . RE_SPECIAL  . RE_COMMAND;
+use constant DATETIME     => RE_ACTIVE . RE_NOLOG . RE_DATETIME . RE_COMMAND;
+use constant SYS_SPECIAL  => RE_ACTIVE . RE_NOLOG . RE_SPECIAL  . RE_USER . RE_COMMAND;
+use constant SYS_DATETIME => RE_ACTIVE . RE_NOLOG . RE_DATETIME . RE_USER . RE_COMMAND;
 
 sub init {
     my $self = shift;
@@ -1875,6 +1903,7 @@ sub init {
 
     ## set defaults
     $self->active(1);
+    $self->nolog(0);
     $self->system(0);
 
     $self->special(undef);
@@ -1901,6 +1930,7 @@ sub init {
 	$self->datetime($args{'-datetime'}) if defined $args{'-datetime'};
 	$self->command($args{'-command'})   if $args{'-command'};
 	$self->active($args{'-active'})     if defined $args{'-active'};
+        $self->nolog($args{'-nolog'})       if defined $args{'-nolog'};
     }
     $rv = $self->data($args{'-data'})   if defined $args{'-data'};
 
@@ -1923,7 +1953,9 @@ sub data {
 	    if( @matches = $data =~ SYS_SPECIAL or
 		@matches = $data =~ SYS_DATETIME ) {
 		my $active = shift @matches;
+                my $nolog = shift @matches;
 		$self->active( ($active ? 0 : 1) );
+                $self->nolog( ($nolog ? 1 : 0) );
 		$self->command( pop @matches );
 		$self->user( pop @matches );
 		$self->datetime( \@matches );
@@ -1941,7 +1973,9 @@ sub data {
 	    if( @matches = $data =~ SPECIAL or
 		@matches = $data =~ DATETIME ) {
 		my $active = shift @matches;
+                my $nolog = shift @matches;
 		$self->active( ($active ? 0 : 1) );
+                $self->nolog( ($nolog ? 1 : 0) );
 		$self->command( pop @matches );
 		$self->user('');
 		$self->datetime( \@matches );
@@ -2058,9 +2092,12 @@ sub dump {
     my $self = shift;
     my $rv   = '';
 
-    $rv = ( $self->active
-	    ? '' 
-	    : '#' );
+    $rv .= ( $self->active
+             ? '' 
+             : '#' );
+    $rv .= ( $self->nolog
+             ? '-'
+             : '' );
     $rv .= $self->data;
     return $rv;
 }
@@ -2538,9 +2575,9 @@ Example:
 ## env objects are a few lines of comments followed by a variable assignment
 package Config::Crontab::Env;
 use strict;
+use warnings;
 
-use vars qw (@ISA);
-@ISA = qw(Config::Crontab::Base);
+our @ISA = qw(Config::Crontab::Base);
 
 use constant RE_ACTIVE   => '^\s*(\#*)\s*';
 use constant RE_VAR      => q!(["']?[^=]+?['"]?)\s*=\s*(.*)$!;
@@ -2787,9 +2824,9 @@ newline terminated.
 ## environment pattern
 package Config::Crontab::Comment;
 use strict;
+use warnings;
 
-use vars qw (@ISA);
-@ISA = qw(Config::Crontab::Base);
+our @ISA = qw(Config::Crontab::Base);
 
 sub init {
     my $self = shift;
@@ -2919,6 +2956,7 @@ not newline terminated.
 ## a virtual base class for top-level container classes
 package Config::Crontab::Container;
 use strict;
+use warnings;
 use Carp;
 
 sub up {
@@ -3052,9 +3090,10 @@ sub replace {
 ## the virtual base class of all Config::Crontab classes
 package Config::Crontab::Base;
 use strict;
+use warnings;
 use Carp;
 
-use vars qw( $AUTOLOAD );
+our $AUTOLOAD;
 
 sub new {
     my $self  = { };
