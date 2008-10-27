@@ -1,5 +1,13 @@
 Revision history for Perl extension Config::Crontab.
 
+Release 1.30
+----------------------------
+revision 1.4
+date: 2008/10/27 16:31:46;  author: scott;  state: Exp;  lines: +58 -19
+- version 1.30
+- modernize (no more 'use vars')
+- support for SuSE-specific 'no syslog' extension
+
 Release 1.21
 ----------------------------
 revision 1.3
