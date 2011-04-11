@@ -39,7 +39,7 @@ our @ISA = qw(Config::Crontab::Base Config::Crontab::Container);
 use Fcntl;
 use File::Temp qw(:POSIX);
 
-our $VERSION = '1.32';
+our $VERSION = '1.33';
 
 sub init {
     my $self = shift;
@@ -101,7 +101,12 @@ sub read {
     else {
 	my $crontab_cmd = "crontab -l 2>/dev/null|";
 	if( $self->owner ) {
-	    $crontab_cmd = "crontab -u " . $self->owner . " -l 2>/dev/null|";
+            if( $^O eq 'SunOS' ) {
+                $crontab_cmd = "crontab -l " . $self->owner . " 2>/dev/null|";
+            }
+            else {
+                $crontab_cmd = "crontab -u " . $self->owner . " -l 2>/dev/null|";
+            }
 	}
 	open FILE, $crontab_cmd
 	  or do {
