@@ -1,8 +1,16 @@
-use Test;
+#-*- mode: cperl -*-#
+use Test::More;
 use blib;
-BEGIN { plan tests => 49 };
-use Config::Crontab;
-ok(1);
+
+chdir 't' if -d 't';
+require 'setup.pl';
+
+unless( have_crontab() ) {
+    plan skip_all => "no crontab available";
+}
+plan tests => 41;
+
+use_ok('Config::Crontab');
 
 my $ct;
 
@@ -86,72 +94,72 @@ print FILE $crontabd;
 close FILE;
 
 ## read our crontab
-ok( $ct = new Config::Crontab( -file => $crontabf ) );
-ok( $ct->read );
-ok( $ct->dump, $crontabd );
+$ct = new Config::Crontab( -file => $crontabf );
+ok( $ct->read, "read" );
+is( $ct->dump, $crontabd, "dump" );
 
 ## rearrange the furniture
-ok( $ct->up($ct->block($ct->select( data_re => 'start spamd' ))) );
-ok( $ct->down($ct->block($ct->select( data_re => 'logs weekly' ))) );
-ok( $ct->first($ct->block($ct->select( data_re => 'fetch ufo' ))) );
-ok( $ct->down($ct->block($ct->select( data_re => 'fetch ufo' ))) );
-ok( $ct->dump, $crontabd2 );
-ok( $ct->write );
+ok( $ct->up($ct->block($ct->select( data_re => 'start spamd' ))), "up" );
+ok( $ct->down($ct->block($ct->select( data_re => 'logs weekly' ))), "down" );
+ok( $ct->first($ct->block($ct->select( data_re => 'fetch ufo' ))), "first" );
+ok( $ct->down($ct->block($ct->select( data_re => 'fetch ufo' ))), "down" );
+is( $ct->dump, $crontabd2, "dump clean" );
+ok( $ct->write, "write" );
 undef $ct;
 
 ## read our file again
 $ct = new Config::Crontab;
 $ct->file($crontabf);
 $ct->read;
-ok( $ct->dump, $crontabd2 );
+is( $ct->dump, $crontabd2, "dump clean" );
 
 ## more furniture adjustments
-ok( $ct->last($ct->block($ct->select( data_re => 'run a backup' ))) );
-ok( $ct->dump, $crontabd3 );
+ok( $ct->last($ct->block($ct->select( data_re => 'run a backup' ))), "last" );
+is( $ct->dump, $crontabd3, "dump clean" );
 
 ## write to a different file
-ok( $ct->file(".foo_" . $crontabf) );
-ok( $ct->write );
+ok( $ct->file(".foo_" . $crontabf), "new file" );
+ok( $ct->write, "write" );
 undef $ct;
 
 ## test a pipe with 'new'
 $ct = new Config::Crontab( -file => "cat $crontabf|" );
 $ct->read;
-ok( $ct->dump, $crontabd2 );
+is( $ct->dump, $crontabd2, "dump clean" );
 undef $ct;
 
 ## test a pipe with 'new'
 $ct = new Config::Crontab( -file => "perl -ne 'print' $crontabf|" );
 $ct->read;
-ok( $ct->dump, $crontabd2 );
+is( $ct->dump, $crontabd2, "dump clean" );
 undef $ct;
 
 ## test a pipe with 'file'
 $ct = new Config::Crontab;
 $ct->file("perl -ne 'print' $crontabf|");
 $ct->read;
-ok( $ct->dump, $crontabd2 );
+is( $ct->dump, $crontabd2, "dump clean" );
 undef $ct;
 
 ## test a pipe with 'file'
 $ct = new Config::Crontab;
 $ct->read( -file => "perl -ne 'print' $crontabf|" );
-ok( $ct->dump, $crontabd2 );
+is( $ct->dump, $crontabd2, "dump clean" );
 undef $ct;
 
-## 
-ok( $ct = new Config::Crontab( -file => ".foo_" . $crontabf ) );
-ok( $ct->read );
-ok( $ct->dump, $crontabd3 );
+##
+$ct = new Config::Crontab( -file => ".foo_" . $crontabf );
+ok( $ct->read, "read" );
+is( $ct->dump, $crontabd3, "dump clean" );
 
 ## make sure nothing bad happened to this file
 ok( $ct->file($crontabf) );
 ok( $ct->read );
-ok( $ct->dump, $crontabd2 );
+is( $ct->dump, $crontabd2, "dump clean" );
 
 ## make all the comments last
-ok( $ct = new Config::Crontab( -file => $crontabf ) );
-ok( $ct->read );
+$ct = new Config::Crontab( -file => $crontabf );
+ok( $ct->read, "read" );
 for my $block ( $ct->blocks ) {
     $block->last($block->select( type => 'comment' ));
 }
@@ -160,22 +168,22 @@ undef $ct;
 ## do mode tests
 
 ## line tests turned out to be "shoot the arrow, whatever it hits, call the target"
-ok( $ct = new Config::Crontab( -file => $crontabf,
-			       -mode => 'line' ) );
-ok( $ct->mode, 'line' );
-ok( $ct->read );
-ok( $ct->blocks, $ct->select );
+$ct = new Config::Crontab( -file => $crontabf,
+                           -mode => 'line' );
+is( $ct->mode, 'line', "line mode" );
+ok( $ct->read, "read" );
+is( $ct->blocks, $ct->select, "blocks selected" );
 
 my $crontabd4 = $crontabd2; $crontabd4 =~ s/(\S)\n(\S)/$1\n\n$2/sg;
-ok( $ct->dump, $crontabd4 );
+is( $ct->dump, $crontabd4, "dump clean" );
 undef $ct;
 
 ## file tests
-ok( $ct = new Config::Crontab( -file => $crontabf,
-			       -mode => 'file' ) );
-ok( $ct->mode, 'file' );
-ok( $ct->read );
-ok( $ct->dump, $crontabd2 );
+$ct = new Config::Crontab( -file => $crontabf,
+                           -mode => 'file' );
+is( $ct->mode, 'file', "file mode" );
+ok( $ct->read, "read" );
+is( $ct->dump, $crontabd2, "dump clean" );
 undef $ct;
 
 ## do squeeze tests
@@ -209,11 +217,11 @@ print FILE $crontabd5;
 close FILE;
 
 ## squeeze: FIXME: squeeze(0) doesn't work properly
-ok( $ct = new Config::Crontab( -file    => $crontabf,
-			       -squeeze => 0 ) );
+$ct = new Config::Crontab( -file    => $crontabf,
+                           -squeeze => 0 );
 ok( $ct->squeeze(1) );  ## squeeze
 ok( $ct->read );
-ok( $ct->dump, <<_CRONTAB_ );
+is( $ct->dump, <<_CRONTAB_, "squeeze dump clean" );
 ## comment 1
 5 8 * * * /bin/command1
 
@@ -229,26 +237,26 @@ undef $ct;
 
 
 ## test reading/writing from a nonexistent file: strict should take effect here
-ok( $ct = new Config::Crontab( -file => ".tmp_foo.$$" ) );
-ok( $block = new Config::Crontab::Block );
-ok( $block->last( new Config::Crontab::Event( -data => '5 10 15 20 Mon /bin/monday' ) ) );
-ok( $ct->last($block) );
-ok( $ct->write );
+$ct = new Config::Crontab( -file => ".tmp_foo.$$" );
+ok( $block = new Config::Crontab::Block, "new block" );
+ok( $block->last( new Config::Crontab::Event( -data => '5 10 15 20 Mon /bin/monday' ) ), "last" );
+ok( $ct->last($block), "last again" );
+ok( $ct->write, "write" );
 undef $ct;
 
-ok( $ct = new Config::Crontab( -file => ".tmp_foo.$$" ) );
-ok( $ct->dump, <<_DUMP_ );
+$ct = new Config::Crontab( -file => ".tmp_foo.$$" );
+is( $ct->dump, <<_DUMP_, "strict good" );
 5 10 15 20 Mon /bin/monday
 _DUMP_
 undef $ct;
 unlink ".tmp_foo.$$";
 
 eval { $ct = new Config::Crontab( -file => ".tmp_foo.$$", -strict => 1 ) };
-ok( $@ );
+ok( $@, "strict error" );
 
 undef $ct;
 eval { $ct = new Config::Crontab( -file => ".tmp_foo.$$", -strict => 0 ) };
-ok( !$@ );
+ok( !$@, "unstrict clean" );
 
 ## we don't test non-squeeze mode because it doesn't really work
 

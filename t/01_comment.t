@@ -1,57 +1,66 @@
-use Test;
+#-*- mode: cperl -*-#
+use Test::More;
 use blib;
-BEGIN { plan tests => 29 };
-use Config::Crontab;
-ok(1);
+
+chdir 't' if -d 't';
+require 'setup.pl';
+
+unless( have_crontab() ) {
+    plan skip_all => "no crontab available";
+    exit;
+}
+plan tests => 21;
+
+use_ok('Config::Crontab');
 
 my $comment;
 
-ok( $comment = new Config::Crontab::Comment );
-ok( $comment->data, '' );
-ok( $comment->dump, '' );
+$comment = new Config::Crontab::Comment;
+is( $comment->data, '' );
+is( $comment->dump, '' );
 undef $comment;
 
-ok( $comment = new Config::Crontab::Comment( -data => undef ) );
-ok( $comment->data, '' );
-ok( $comment->dump, '' );
+$comment = new Config::Crontab::Comment( -data => undef );
+is( $comment->data, '' );
+is( $comment->dump, '' );
 undef $comment;
 
-ok( $comment = new Config::Crontab::Comment( -data => '' ) );
-ok( $comment->data, '' );
-ok( $comment->dump, '' );
+$comment = new Config::Crontab::Comment( -data => '' );
+is( $comment->data, '' );
+is( $comment->dump, '' );
 undef $comment;
 
-ok( $comment = new Config::Crontab::Comment );
-ok( $comment->dump, '' );
-ok( $comment->data, '' );
+$comment = new Config::Crontab::Comment;
+is( $comment->dump, '' );
+is( $comment->data, '' );
 
-ok( $comment->data('## testing'), '## testing' );
-ok( $comment->data, '## testing' );
-ok( $comment->dump, '## testing' );
-undef $comment;
-
-## constructor
-ok( $comment = new Config::Crontab::Comment( -data => '## testing 2' ) );
-ok( $comment->data, '## testing 2' );
-ok( $comment->dump, '## testing 2' );
+is( $comment->data('## testing'), '## testing' );
+is( $comment->data, '## testing' );
+is( $comment->dump, '## testing' );
 undef $comment;
 
 ## constructor
-ok( $comment = new Config::Crontab::Comment('## testing 3') );
-ok( $comment->data, '## testing 3' );
-ok( $comment->dump, '## testing 3' );
+$comment = new Config::Crontab::Comment( -data => '## testing 2' );
+is( $comment->data, '## testing 2' );
+is( $comment->dump, '## testing 2' );
+undef $comment;
+
+## constructor
+$comment = new Config::Crontab::Comment('## testing 3');
+is( $comment->data, '## testing 3' );
+is( $comment->dump, '## testing 3' );
 undef $comment;
 
 ## whitespace
-ok( $comment = new Config::Crontab::Comment( -data => '	' ) );
-ok( $comment->data, '	' );
-ok( $comment->dump, '	' );
+$comment = new Config::Crontab::Comment( -data => '	' );
+is( $comment->data, '	' );
+is( $comment->dump, '	' );
 undef $comment;
 
 ## newline stripping
-ok( $comment = new Config::Crontab::Comment( -data => "## no newline\n" ) );
-ok( $comment->data, '## no newline' );
-ok( $comment->dump, '## no newline' );
+$comment = new Config::Crontab::Comment( -data => "## no newline\n" );
+is( $comment->data, '## no newline' );
+is( $comment->dump, '## no newline' );
 undef $comment;
 
 ## garbage in constructor should return undef

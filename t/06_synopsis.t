@@ -1,8 +1,18 @@
-use Test;
+#-*- mode: cperl -*-#
+use Test::More;
 use blib;
-BEGIN { plan tests => 2 };
-use Config::Crontab;
-ok(1);
+
+chdir 't' if -d 't';
+require 'setup.pl';
+
+unless( have_crontab() ) {
+    plan skip_all => "no crontab available";
+    exit;
+}
+
+plan tests => 2;
+
+use_ok( 'Config::Crontab' );
 
 my $ct = new Config::Crontab( -file => ".tmp_crontab.$$" );
 
@@ -29,7 +39,7 @@ $ct->last($block);
 ## write out crontab file
 $ct->write;
 
-ok( $ct->dump, <<_DUMPED_ );
+is( $ct->dump, <<_DUMPED_, "dump clean" );
 ## mail something to joe at 5 after midnight on Fridays
 MAILTO=joe
 5 0 * * Fri /bin/someprogram 2>&1

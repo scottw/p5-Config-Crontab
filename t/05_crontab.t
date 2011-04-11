@@ -1,8 +1,17 @@
-use Test;
+#-*- mode: cperl -*-#
+use Test::More;
 use blib;
-BEGIN { plan tests => 77 };
-use Config::Crontab;
-ok(1);
+
+chdir 't' if -d 't';
+require 'setup.pl';
+
+unless( have_crontab() ) {
+    plan skip_all => "no crontab available";
+    exit;
+}
+plan tests => 49;
+
+use_ok('Config::Crontab');
 
 my $ct;
 my $crontabf = "_tmp_crontab.$$";
@@ -41,38 +50,38 @@ print FILE $crontabd;
 close FILE;
 
 ## basic constructor tests (test auto-parse)
-ok( $ct = new Config::Crontab( -file => $crontabf ) );
-ok( $ct->file, $crontabf );
-ok( $ct->dump, $crontabd );
+$ct = new Config::Crontab( -file => $crontabf );
+is( $ct->file, $crontabf, "file output" );
+is( $ct->dump, $crontabd, "clean dump" );
 
 ## select tests
-ok( @lines = $ct->select );
-ok( scalar @lines, 15 );
-ok( @lines = $ct->select( type => 'event' ) );
-ok( scalar @lines, 7 );
+@lines = $ct->select;
+is( scalar @lines, 15, "crontab lines" );
+@lines = $ct->select( type => 'event' );
+is( scalar @lines, 7, "selection" );
 
 ## block tests
-ok( $block = $ct->block($lines[0]) );  ## get the block this line is in
-ok( $block->dump, <<_DUMPED_ );
+$block = $ct->block($lines[0]);  ## get the block this line is in
+is( $block->dump, <<_DUMPED_, "dump block" );
 ## logs nightly
 #30 4 * * * /home/scott/bin/weblog.pl -v -s daily >> ~/tmp/logs/weblog.log 2>&1
 _DUMPED_
 
-ok( $block = $ct->block($lines[1]) );
-ok( $block->dump, <<_DUMPED_ );
+$block = $ct->block($lines[1]);
+is( $block->dump, <<_DUMPED_, "dump block" );
 ## logs weekly
 #35 4 * * 1 /home/scott/bin/weblog.pl -v -s weekly >> ~/tmp/logs/weblog.log 2>&1
 _DUMPED_
 
-ok( $block = $ct->block($lines[2]) );
-ok( $block->dump, <<'_DUMPED_' );
+$block = $ct->block($lines[2]);
+is( $block->dump, <<'_DUMPED_', "dump block" );
 ## run a backup
 20 2 * * 5 /usr/bin/tar -zcvf .backup/`$HOME/bin/dateish`.tar.gz ~/per
 40 2 * * 5 /usr/bin/scp $HOME/.backup/`$HOME/bin/dateish`.tar.gz mx:~/backup/tub
 _DUMPED_
 
-ok( $block = $ct->block($lines[3]) );
-ok( $block->dump, <<'_DUMPED_' );
+$block = $ct->block($lines[3]);
+is( $block->dump, <<'_DUMPED_', "dump block" );
 ## run a backup
 20 2 * * 5 /usr/bin/tar -zcvf .backup/`$HOME/bin/dateish`.tar.gz ~/per
 40 2 * * 5 /usr/bin/scp $HOME/.backup/`$HOME/bin/dateish`.tar.gz mx:~/backup/tub
@@ -80,49 +89,49 @@ _DUMPED_
 
 
 ## regular expression match
-ok( @lines = $ct->select( type   => 'event',
-			  dow_re => '5' ) );
-ok( scalar @lines, 4 );
+@lines = $ct->select( type   => 'event',
+                      dow_re => '5' );
+is( scalar @lines, 4 );
 
 ## negative regular expression match
-ok( @lines = $ct->select( type    => 'event',
-			  dow_nre => '5' ) );
-ok( scalar @lines, 3 );
+@lines = $ct->select( type    => 'event',
+                      dow_nre => '5' );
+is( scalar @lines, 3 );
 
 ## string exact match
-ok( @lines = $ct->select( type => 'event',
-			  dow  => '5' ) );
-ok( scalar @lines, 2 );
+@lines = $ct->select( type => 'event',
+                      dow  => '5' );
+is( scalar @lines, 2 );
 
 ## tight regular expression
-ok( @lines = $ct->select( type   => 'event',
-			  dow_re => '^5$' ) );
-ok( scalar @lines, 2 );
+@lines = $ct->select( type   => 'event',
+                      dow_re => '^5$' );
+is( scalar @lines, 2 );
 
 ## tight negative regular expression
-ok( @lines = $ct->select( type    => 'event',
-			  dow_nre => '^5$' ) );
-ok( scalar @lines, 5 );
+@lines = $ct->select( type    => 'event',
+                      dow_nre => '^5$' );
+is( scalar @lines, 5 );
 
 ## multiple fields
-ok( @lines = $ct->select( type   => 'event',
-			  minute => '20',
-			  dow_re => '^5$' ) );
-ok( scalar @lines, 1 );
+@lines = $ct->select( type   => 'event',
+                      minute => '20',
+                      dow_re => '^5$' );
+is( scalar @lines, 1 );
 
 ## more complex expressions
-ok( @lines = $ct->select( type   => 'event',
-			  dow_re => '(?:1|5)' ) );
-ok( scalar @lines, 5 );
+@lines = $ct->select( type   => 'event',
+                      dow_re => '(?:1|5)' );
+is( scalar @lines, 5 );
 
-ok( @lines = $ct->select( type       => 'event',
-			  command_re => 'dateish' ) );
-ok( scalar @lines, 2 );
+@lines = $ct->select( type       => 'event',
+                      command_re => 'dateish' );
+is( scalar @lines, 2 );
 
 ## try doing some selects where the field does not exist in the object
-ok( @lines = $ct->select( -type   => 'event',
+is( @lines = $ct->select( -type   => 'event',
 			  -foo_re => 'bar' ), 0 );
-ok( scalar @lines, 0 );
+is( scalar @lines, 0 );
 
 ## test remove blocks
 $block = $ct->block($ct->select(type => 'comment', data_re => 'logs nightly'));
@@ -148,12 +157,12 @@ MAILTO=scott
 ## start spamd
 @reboot /usr/local/bin/spamd -c -d -p 1783
 _CRONTAB_
-ok( $ct->dump, $crontabd2 );
+is( $ct->dump, $crontabd2, "dump compare" );
 
 ## "move" tests
 
-ok( $ct->last($block) );
-ok( $ct->dump, <<'_DUMPED_' );
+$ct->last($block);
+is( $ct->dump, <<'_DUMPED_', "block last" );
 MAILTO=scott
 
 ## logs weekly
@@ -178,17 +187,17 @@ MAILTO=scott
 _DUMPED_
 
 ## grab the line above where this block used to live
-ok( ($line) = $ct->select(type => 'env', value => 'scott') );
-ok( $line->dump, 'MAILTO=scott' );
+($line) = $ct->select(type => 'env', value => 'scott');
+is( $line->dump, 'MAILTO=scott', "selection" );
 
 ## now insert this block after the block containing our line
-ok( $ct->after($ct->block($line), $block) );
-ok( $ct->dump, $crontabd );
+$ct->after($ct->block($line), $block);
+is( $ct->dump, $crontabd, "dump after" );
 
 ## move it down one
-ok( $ct->down($block) );
+$ct->down($block);
 
-ok( $ct->dump, <<'_DUMPED_' );
+is( $ct->dump, <<'_DUMPED_', "after compare dump" );
 MAILTO=scott
 
 ## logs weekly
@@ -215,14 +224,14 @@ undef $ct;
 
 
 ## test replace
-ok( $ct = new Config::Crontab( -file => $crontabf ) );
+$ct = new Config::Crontab( -file => $crontabf );
 $block = new Config::Crontab::Block( -data => <<_BLOCK_ );
 ## new replacement block
 FOO=bar
 6 12 * * Thu /bin/thursday
 _BLOCK_
-ok( $ct->replace($ct->block($ct->select(-data_re => 'run a backup')), $block) );
-ok( $ct->dump, <<'_DUMPED_' );
+$ct->replace($ct->block($ct->select(-data_re => 'run a backup')), $block);
+is( $ct->dump, <<'_DUMPED_', "replacement dump" );
 MAILTO=scott
 
 ## logs nightly
@@ -248,9 +257,9 @@ _DUMPED_
 
 
 ## test selection and poking an element
-ok( $ct = new Config::Crontab( -file => $crontabf ) );
-ok( ($ct->select(-command_re => 'weblog'))[0]->hour(5) );
-ok( $ct->dump, <<'_DUMPED_' );
+$ct = new Config::Crontab( -file => $crontabf );
+($ct->select(-command_re => 'weblog'))[0]->hour(5);
+is( $ct->dump, <<'_DUMPED_', "replacement hour dump" );
 MAILTO=scott
 
 ## logs nightly
@@ -277,15 +286,15 @@ undef $ct;
 
 
 ## test block removal using block select
-ok( $ct = new Config::Crontab );
-ok( $ct->read( -file => $crontabf ) );
-ok( $ct->dump, $crontabd );
+$ct = new Config::Crontab;
+$ct->read( -file => $crontabf );
+is( $ct->dump, $crontabd, "compare read" );
 for my $blk ( $ct->blocks ) {
     $blk->remove($blk->select( -type => 'comment' ));
     $blk->remove($blk->select( -type   => 'event',
 			       -active => 0, ));
 }
-ok( $ct->dump, <<'_CRONTAB_' );
+is( $ct->dump, <<'_CRONTAB_', "compare removed blocks" );
 MAILTO=scott
 
 20 2 * * 5 /usr/bin/tar -zcvf .backup/`$HOME/bin/dateish`.tar.gz ~/per
@@ -303,11 +312,11 @@ undef $ct;
 ## test block removal using crontab select
 $ct = new Config::Crontab;
 $ct->read( -file => $crontabf );
-ok( $ct->dump, $crontabd );
+is( $ct->dump, $crontabd, "compare removed block via select" );
 $ct->remove($ct->select( -type => 'comment' ));
 $ct->remove($ct->select( -type => 'event',
 			 -active => 0 ));
-ok( $ct->dump, <<'_CRONTAB_' );
+is( $ct->dump, <<'_CRONTAB_', "compre remove via select" );
 MAILTO=scott
 
 20 2 * * 5 /usr/bin/tar -zcvf .backup/`$HOME/bin/dateish`.tar.gz ~/per
@@ -323,22 +332,22 @@ undef $ct;
 
 
 ## test adding raw blocks
-ok( $ct = new Config::Crontab );
-ok( $ct->last(new Config::Crontab::Block( -data => <<_BLOCK_ )) );
+$ct = new Config::Crontab;
+$ct->last(new Config::Crontab::Block( -data => <<_BLOCK_ ));
 ## eat ice cream
 5 * * * 1-5 /bin/eat --cream=ice
 _BLOCK_
-ok( $ct->dump, <<_BLOCK_ );
+is( $ct->dump, <<_BLOCK_, "add raw block" );
 ## eat ice cream
 5 * * * 1-5 /bin/eat --cream=ice
 _BLOCK_
 
-ok( $ct->last(new Config::Crontab::Block( -data => <<_BLOCK_ )) );
+$ct->last(new Config::Crontab::Block( -data => <<_BLOCK_ ));
 ## eat pizza
 35 * * * 1-5 /bin/eat --pizza
 _BLOCK_
 
-ok( $ct->dump, <<_BLOCK_ );
+is( $ct->dump, <<_BLOCK_, "add raw block" );
 ## eat ice cream
 5 * * * 1-5 /bin/eat --cream=ice
 
@@ -378,11 +387,11 @@ print FILE $crontabd;
 close FILE;
 
 $ct = new Config::Crontab( -file => $crontabf, -system => 1 );
-ok( ($ct->select(-command_re => 'weblog'))[0]->user, 'ipartner' );
-ok( ($ct->select(-command_re => 'fetch_image'))[0]->user, 'scott' );
-ok( ($ct->select(-user => 'phil'))[0]->dow, '1-5' );
-ok( ($ct->select(-user => 'root'))[1]->minute, '40' );
-ok( ($ct->select(-user => 'root'))[2]->special, '@reboot' );
+is( ($ct->select(-command_re => 'weblog'))[0]->user, 'ipartner' );
+is( ($ct->select(-command_re => 'fetch_image'))[0]->user, 'scott' );
+is( ($ct->select(-user => 'phil'))[0]->dow, '1-5' );
+is( ($ct->select(-user => 'root'))[1]->minute, '40' );
+is( ($ct->select(-user => 'root'))[2]->special, '@reboot' );
 
 ## test pretty print for system crontab files
 unlink $crontabf;
@@ -418,19 +427,19 @@ close FILE;
 
 ## test the purdy printin' for system crontab files
 $ct = new Config::Crontab( -file => $crontabf, -system => 1 );
-ok( $ct->dump, $crontabd );
+is( $ct->dump, $crontabd, "pretty print" );
 
 ## test select_blocks
 my @blocks = $ct->select_blocks( -index => 1 );
-ok( ($blocks[0]->select( -type => 'comment' ))[0]->data, '## logs nightly' );
+is( ($blocks[0]->select( -type => 'comment' ))[0]->data, '## logs nightly' );
 
 @blocks = $ct->select_blocks( -index => 2 );
-ok( ($blocks[0]->select( -type => 'event' ))[0]->user, 'ipartner' );
+is( ($blocks[0]->select( -type => 'event' ))[0]->user, 'ipartner' );
 
 @blocks = $ct->select_blocks( -index => [0, 4, 7] );
-ok( ($blocks[0]->select( -type => 'env' ))[0]->value, 'scott' );
-ok( ($blocks[1]->select( -type => 'comment' ))[0]->data, '## fetch ufo' );
-ok( $blocks[2], undef );
+is( ($blocks[0]->select( -type => 'env' ))[0]->value, 'scott' );
+is( ($blocks[1]->select( -type => 'comment' ))[0]->data, '## fetch ufo' );
+is( $blocks[2], undef, "undef" );
 
 ##
 ## try some owner tests
@@ -438,15 +447,15 @@ ok( $blocks[2], undef );
 undef $ct;
 $ct = new Config::Crontab;
 $ct->owner('root');
-ok( $ct->owner, 'root' );
+is( $ct->owner, 'root', "owner" );
 
 ## stricter
 $ct->strict(1);
 eval { $ct->owner('somereallybogususername8838293') };
-ok( $@ =~ qr(Unknown user)i );
+like( $@, qr(Unknown user)i, "unknown user" );
 
 eval { $ct->owner("root\0 2>/dev/null; cat /etc/passwd") };
-ok( $@ =~ qr(Illegal username)i );
+like( $@, qr(Illegal username)i, "illegal username" );
 
 ##
 ## test SuSE-specific nolog option
@@ -460,9 +469,9 @@ close FILE;
 
 $ct = new Config::Crontab( -file => $crontabf, -system => 1 );
 my($blk) = $ct->select_blocks( -index => 4 );
-ok( $blk->dump, qq!## fetch ufo\n-13\t9\t*\t*\t1-5\tscott\tenv DISPLAY=tub:0 \$HOME/bin/fetch_image\n! );
+is( $blk->dump, qq!## fetch ufo\n-13\t9\t*\t*\t1-5\tscott\tenv DISPLAY=tub:0 \$HOME/bin/fetch_image\n! );
 ($blk->select(-type => 'event'))[0]->nolog(0);
-ok( $blk->dump, qq!## fetch ufo\n13\t9\t*\t*\t1-5\tscott\tenv DISPLAY=tub:0 \$HOME/bin/fetch_image\n! );
+is( $blk->dump, qq!## fetch ufo\n13\t9\t*\t*\t1-5\tscott\tenv DISPLAY=tub:0 \$HOME/bin/fetch_image\n! );
 
 END {
     unlink $crontabf;

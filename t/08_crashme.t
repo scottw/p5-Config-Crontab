@@ -1,8 +1,18 @@
-use Test;
+#-*- mode: cperl -*-#
+use Test::More;
 use blib;
-BEGIN { plan tests => 5 };
-use Config::Crontab;
-ok(1);
+
+chdir 't' if -d 't';
+require 'setup.pl';
+
+unless( have_crontab() ) {
+    plan skip_all => "no crontab available";
+    exit;
+}
+
+plan tests => 5;
+
+use_ok('Config::Crontab');
 
 my $ct;
 
@@ -14,7 +24,7 @@ my $event1 = new Config::Crontab::Event( -data => '30 4 * * Wed /bin/wednesday' 
 
 ## do tests by adding non-block objects to a crontab
 $ct = new Config::Crontab;
-ok( $ct->last($com1, $com2, $env1, $event1), 0 );
+is( $ct->last($com1, $com2, $env1, $event1), 0, "last entry" );
 my $rv = <<'_CRONTAB_';
 ## Well! If microwaves don't
 ## take the cake!
@@ -22,8 +32,8 @@ MAILTO=joe@schmoe.org
 30 4 * * Wed /bin/wednesday
 _CRONTAB_
 chomp $rv;  ## chomped because not a block
-ok( $ct->dump, '' );
+is( $ct->dump, '', "empty dump" );
 
 ## try some selects, deletes, etc.
-ok( $ct->select, 0 );
-ok( ! $ct->remove($com1) ); ## FIXME: Perl 5.6.1 says '0', Perl 5.00503 says ''; we use !
+is( $ct->select, 0, "select empty" );
+ok( ! $ct->remove($com1), "remove empty" ); ## FIXME: Perl 5.6.1 says '0', Perl 5.00503 says ''; we use !

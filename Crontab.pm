@@ -1,14 +1,14 @@
 ############################################################
 ############################################################
-## 
+##
 ## Scott Wiersdorf
 ## Created: Fri May  9 14:03:01 MDT 2003
-## $SMEId: local/perl/Config/Crontab/Crontab.pm,v 1.38 2005/12/09 23:34:33 scottw Exp $
-## 
+## Updated: $Id$
+##
 ## Config::Crontab - a crontab(5) parser
-## 
+##
 ## This file contains the following classes:
-## 
+##
 ## - Config::Crontab - the top level crontab object
 ## - Config::Crontab::Block - crontab block (paragraph) handling
 ## - Config::Crontab::Event - "5 0 * * * /bin/command"
@@ -18,9 +18,12 @@
 ##     Config::Crontab classes inherit
 ## - Config::Crontab::Container - base class from which Crontab and
 ##     Block classes inherit
-## 
+##
 ############################################################
 ############################################################
+
+## to do: if -file = /etc/crontab, set system => 1
+## to do: if adding a non-block to a $ct file, make a block for us automatically
 
 ## a crontab object is a list of Block objects (see below) This class
 ## (Config::Crontab) is for working with crontab files as a whole.
@@ -36,7 +39,7 @@ our @ISA = qw(Config::Crontab::Base Config::Crontab::Container);
 use Fcntl;
 use File::Temp qw(:POSIX);
 
-our $VERSION = '1.30';
+our $VERSION = '1.31';
 
 sub init {
     my $self = shift;

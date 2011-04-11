@@ -1,8 +1,17 @@
-use Test;
+#-*- mode: cperl -*-#
+use Test::More;
 use blib;
-BEGIN { plan tests => 2 };
-use Config::Crontab;
-ok(1);
+
+chdir 't' if -d 't';
+require 'setup.pl';
+
+unless( have_crontab() ) {
+    plan skip_all => "no crontab available";
+    exit;
+}
+plan tests => 2;
+
+use_ok('Config::Crontab');
 
 my $crontabf = ".tmp_crontab.$$";
 my $crontabd = <<'_CRONTAB_';
@@ -21,7 +30,7 @@ close FILE;
 my $ct = new Config::Crontab( -file => $crontabf );
 $ct->remove_tab;
 
-ok( ! -e $crontabf );
+ok( ! -e $crontabf, "crontab removed" );
 
 END {
     unlink $crontabf;
