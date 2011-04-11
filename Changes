@@ -1,5 +1,11 @@
 Revision history for Perl extension Config::Crontab.
 
+Release 1.33
+----------------------------
+revision 1.7
+date: 2011/04/11 22:55:03;  author: scott;  state: Exp;  lines: +8 -3
+- check for SunOS crontab (RT#32658)
+
 Release 1.32
 ----------------------------
 revision 1.6
