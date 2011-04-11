@@ -4,6 +4,7 @@ Makefile.PL
 MANIFEST
 README
 example/crontab.cgi
+t/setup.pl
 t/01_comment.t
 t/02_env.t
 t/03_event.t
