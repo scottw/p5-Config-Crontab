@@ -1,5 +1,11 @@
 Revision history for Perl extension Config::Crontab.
 
+Release 1.32
+----------------------------
+revision 1.6
+date: 2011/04/11 22:39:19;  author: scott;  state: Exp;  lines: +2 -2
+- add t/setup.pl to MANIFEST
+
 Release 1.31
 ----------------------------
 revision 1.5
