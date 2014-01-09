@@ -1,5 +1,11 @@
 Revision history for Perl extension Config::Crontab.
 
+Release 1.40
+----------------------------
+revision 1.8
+date: 2014/01/09 04:50:04;  author: scott;  state: Exp;  lines: +5 -4
+- fix for multiple datetime wildcards
+
 Release 1.33
 ----------------------------
 revision 1.7

@@ -9,7 +9,7 @@ unless( have_crontab() ) {
     plan skip_all => "no crontab available";
     exit;
 }
-plan tests => 109;
+plan tests => 110;
 
 use_ok('Config::Crontab');
 
@@ -54,6 +54,11 @@ is( $event->special, '' );
 is( $event->minute, '*/5' );
 is( $event->hour, 0 );
 undef $event;
+
+## setting via datetime
+$event = new Config::Crontab::Event( -datetime => '*/2,*/5 0 * * *',
+                                     -command  => '/bin/echo' );
+is( $event->datetime, '*/2,*/5 0 * * *', 'multiple wildcards (rus)' );
 
 ## setting via special
 $event = new Config::Crontab::Event( -special => '@monthly',

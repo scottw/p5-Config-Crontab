@@ -1,4 +1,4 @@
-Config/Crontab version 1.33
+Config/Crontab version 1.40
 ===========================
 
 Config::Crontab reads and writes (and pretty-prints) your crontab(5)
