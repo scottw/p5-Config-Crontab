@@ -41,6 +41,8 @@ use File::Temp qw(:POSIX);
 
 our $VERSION = '1.40';
 
+my $BLOCK_SEPARATOR = "\n\n";
+
 sub init {
     my $self = shift;
     my %args = @_;
@@ -63,10 +65,26 @@ sub init {
     $self->owner(    $args{'-owner'})    if exists $args{'-owner'};
     $self->owner_re( $args{'-owner_re'}) if exists $args{'-owner_re'};
 
-    ## auto-parse if file is specified
-    $self->read if $self->file;
+    if ( exists $args{'-data'} ) {
+        $self->_read_data() for $args{'-data'};
+    }
+    else {
+
+        ## auto-parse if file is specified
+        $self->read if $self->file;
+    }
 
     return 1;
+}
+
+#To keep string copying to a minimum, this reads $_.
+sub _read_data {
+    my ($self) = @_;
+
+    while ( length ) {
+        s<(.+?)(?:$BLOCK_SEPARATOR|\z)><>s;
+        $self->_add_block_in_read() for $1;
+    }
 }
 
 sub read {
@@ -137,7 +155,7 @@ sub read {
 
 	## each paragraph (\n\n+) is a block
 	else {
-	    $/ = ( $self->squeeze ? '' : "\n\n" );
+	    $/ = ( $self->squeeze ? '' : $BLOCK_SEPARATOR );
 	}
 
 	local $_;
@@ -148,6 +166,18 @@ sub read {
 	}
     }
     close FILE;
+}
+
+#To keep string copying to a minimum, this reads $_.
+sub _add_block_in_read {
+    my ($self) = @_;
+
+    return $self->last(
+        Config::Crontab::Block->new(
+            -system => $self->system,
+            -data   => $_,
+        ),
+    );
 }
 
 ## this is needed for Config::Crontab::Container class methods
