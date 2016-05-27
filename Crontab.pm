@@ -39,7 +39,7 @@ our @ISA = qw(Config::Crontab::Base Config::Crontab::Container);
 use Fcntl;
 use File::Temp qw(:POSIX);
 
-our $VERSION = '1.40';
+our $VERSION = '1.41';
 
 sub init {
     my $self = shift;
@@ -938,7 +938,7 @@ mode is enabled, B<Config::Crontab> will croak with the same error.
 
 =head2 read([%args])
 
-Parses the crontab file specifed by B<file>. If B<file> is not set
+Parses the crontab file specified by B<file>. If B<file> is not set
 (or is false in some way), the crontab will be read from a pipe to
 C<crontab -l>. B<read> optionally takes the same arguments as B<new>
 and B<init> in C<key =E<gt> value> style lists.
@@ -1036,7 +1036,7 @@ Returns a list of crontab lines that match the specified criteria.
 Multiple criteria may be specified. If no criteria are specified,
 B<select> returns a list of all lines in the B<Crontab> object.
 
-Field names should be preceeded by a hyphen (though without a hyphen
+Field names should be preceded by a hyphen (though without a hyphen
 is acceptable too).
 
 The following criteria and associated values are available:
@@ -1715,7 +1715,7 @@ Example:
 Returns a list of B<Event>, B<Env>, or B<Comment> objects from a block
 that match the specified criteria. Multiple criteria may be specified.
 
-Field names should be preceeded by a hyphen (though without a hyphen
+Field names should be preceded by a hyphen (though without a hyphen
 is acceptable too; we use hyphens to avoid the need for quoting keys
 and avoid potential bareword collisions).
 
