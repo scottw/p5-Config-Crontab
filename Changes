@@ -1,5 +1,13 @@
 Revision history for Perl extension Config::Crontab.
 
+Release 1.41
+----------------------------
+commit 5ab21cf7b653915d792e76935606bf24462a11fb
+Author: Scott Wiersdorf <scott@perlcode.org>
+Date:   Thu May 26 19:00:26 2016 -0600
+
+    RT #114744
+
 Release 1.40
 ----------------------------
 revision 1.8
