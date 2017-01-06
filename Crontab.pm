@@ -86,9 +86,11 @@ sub read {
 	$self->file('/etc/crontab');
     }
 
+    my $fh;
+
     ## parse the file accordingly
     if( $self->file ) {
-	open FILE, $self->file
+	open $fh, $self->file
 	  or do {
 	      $self->error($!);
 	      if( $self->strict ) {
@@ -108,7 +110,7 @@ sub read {
                 $crontab_cmd = "crontab -u " . $self->owner . " -l 2>/dev/null|";
             }
 	}
-	open FILE, $crontab_cmd
+	open $fh, $crontab_cmd
 	  or do {
 	      $self->error($!);
 	      if( $self->strict ) {
@@ -141,13 +143,13 @@ sub read {
 	}
 
 	local $_;
-	while( <FILE> ) {
+	while( <$fh> ) {
 	    chomp;
 	    $self->last( new Config::Crontab::Block( -system => $self->system,
 						     -data   => $_ ) );
 	}
     }
-    close FILE;
+    close $fh;
 }
 
 ## this is needed for Config::Crontab::Container class methods
@@ -283,19 +285,19 @@ sub write {
     }
 
     if( $self->file ) {
-	open CT, ">" . $self->file
+	open my $ct, ">" . $self->file
 	  or croak "Could not open " . $self->file . ": $!\n";
-	print CT $self->dump;
-	close CT;
+	print {$ct} $self->dump;
+	close $ct;
     }
 
     ## use a temporary filename
     else {
 	my $tmpfile;
 	do { $tmpfile = tmpnam() }
-	  until sysopen(CT, $tmpfile, O_RDWR|O_CREAT|O_EXCL);
-	print CT $self->dump;
-	close CT;
+	  until sysopen(my $ct, $tmpfile, O_RDWR|O_CREAT|O_EXCL);
+	print {$ct} $self->dump;
+	close $ct;
 
 	my $crontab;
 	if( my $owner = $self->owner ) {
