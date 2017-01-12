@@ -1,5 +1,5 @@
-Config/Crontab version 1.41
-===========================
+Config/Crontab
+==============
 
 Config::Crontab reads and writes (and pretty-prints) your crontab(5)
 files. It is compatible with Vixie-style crontabs (and all subsets,
