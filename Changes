@@ -6,7 +6,7 @@ commit 337927a0840a7d3572b31c9c31c2911463e6bbc4
 Author: Felipe Gasper <felipe@felipegasper.com>
 Date:   Fri Jan 6 15:39:46 2017 -0500
 
-    Use lexical filehandles rather than barewords
+    Use lexical filehandles rather than barewords (https://github.com/FGasper)
 
 Release 1.41
 ----------------------------
