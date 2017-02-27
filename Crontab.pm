@@ -39,7 +39,7 @@ our @ISA = qw(Config::Crontab::Base Config::Crontab::Container);
 use Fcntl;
 use File::Temp qw(:POSIX);
 
-our $VERSION = '1.42';
+our $VERSION = '1.43';
 
 sub init {
     my $self = shift;
@@ -294,8 +294,9 @@ sub write {
     ## use a temporary filename
     else {
 	my $tmpfile;
+        my $ct;
 	do { $tmpfile = tmpnam() }
-	  until sysopen(my $ct, $tmpfile, O_RDWR|O_CREAT|O_EXCL);
+	  until sysopen($ct, $tmpfile, O_RDWR|O_CREAT|O_EXCL);
 	print {$ct} $self->dump;
 	close $ct;
 

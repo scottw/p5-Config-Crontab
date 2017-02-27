@@ -8,7 +8,7 @@ require 'setup.pl';
 unless( have_crontab() ) {
     plan skip_all => "no crontab available";
 }
-plan tests => 41;
+plan tests => 43;
 
 use_ok('Config::Crontab');
 
@@ -257,6 +257,19 @@ ok( $@, "strict error" );
 undef $ct;
 eval { $ct = new Config::Crontab( -file => ".tmp_foo.$$", -strict => 0 ) };
 ok( !$@, "unstrict clean" );
+
+undef $ct;
+$ct = new Config::Crontab;
+$block = new Config::Crontab::Block;
+$block->last( new Config::Crontab::Event( -data => '5 * * * * /bin/true' ) );
+$ct->last($block);
+ok($ct->write, "crontab written");
+
+undef $ct;
+$ct = new Config::Crontab;
+$ct->read;
+like($ct->dump, qr(^5.*/bin/true$), "crontab written");
+$ct->remove_tab;
 
 ## we don't test non-squeeze mode because it doesn't really work
 
