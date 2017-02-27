@@ -1,5 +1,13 @@
 Revision history for Perl extension Config::Crontab.
 
+Release 1.43
+----------------------------
+commit 2fedca514e2826bae41960295af20dc718db3256
+Author: Scott Wiersdorf <scott@perlcode.org>
+Date:   Mon Feb 27 10:42:51 2017 -0700
+
+    fix lexical scope error introduced in PR#2; tests
+
 Release 1.42
 ----------------------------
 commit 337927a0840a7d3572b31c9c31c2911463e6bbc4
