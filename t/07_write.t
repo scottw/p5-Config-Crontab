@@ -258,18 +258,22 @@ undef $ct;
 eval { $ct = new Config::Crontab( -file => ".tmp_foo.$$", -strict => 0 ) };
 ok( !$@, "unstrict clean" );
 
-undef $ct;
-$ct = new Config::Crontab;
-$block = new Config::Crontab::Block;
-$block->last( new Config::Crontab::Event( -data => '5 * * * * /bin/true' ) );
-$ct->last($block);
-ok($ct->write, "crontab written");
+SKIP: {
+    skip "WRITE_CRONTAB not set", 2 unless $ENV{WRITE_CRONTAB};
 
-undef $ct;
-$ct = new Config::Crontab;
-$ct->read;
-like($ct->dump, qr(^5.*/bin/true$), "crontab written");
-$ct->remove_tab;
+    undef $ct;
+    $ct = new Config::Crontab;
+    $block = new Config::Crontab::Block;
+    $block->last( new Config::Crontab::Event( -data => '5 * * * * /bin/true' ) );
+    $ct->last($block);
+    ok($ct->write, "crontab written");
+
+    undef $ct;
+    $ct = new Config::Crontab;
+    $ct->read;
+    like($ct->dump, qr(^5.*/bin/true$), "crontab written");
+    $ct->remove_tab;
+}
 
 ## we don't test non-squeeze mode because it doesn't really work
 

@@ -39,7 +39,7 @@ our @ISA = qw(Config::Crontab::Base Config::Crontab::Container);
 use Fcntl;
 use File::Temp qw(:POSIX);
 
-our $VERSION = '1.43';
+our $VERSION = '1.44';
 
 sub init {
     my $self = shift;
