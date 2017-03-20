@@ -1,5 +1,13 @@
 Revision history for Perl extension Config::Crontab.
 
+Release 1.44
+----------------------------
+commit a81b708e1b5b023b6fc70ec7b68ce4cfcd1d5628
+Author: Scott Wiersdorf <scott@perlcode.org>
+Date:   Mon Mar 20 14:24:08 2017 -0600
+
+    skip crontab writes unless explicitly asked for
+
 Release 1.43
 ----------------------------
 commit 2fedca514e2826bae41960295af20dc718db3256
