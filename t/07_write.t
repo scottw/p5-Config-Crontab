@@ -3,7 +3,7 @@ use Test::More;
 use blib;
 
 chdir 't' if -d 't';
-require 'setup.pl';
+require './setup.pl';
 
 unless( have_crontab() ) {
     plan skip_all => "no crontab available";
